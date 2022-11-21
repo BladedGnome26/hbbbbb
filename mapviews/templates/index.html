@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+{% load static %}
+<html>
+<head>
+<meta charset="utf-8">
+<title>ReciclApp</title>
+<meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+<link href="https://api.mapbox.com/mapbox-gl-js/v2.11.0/mapbox-gl.css" rel="stylesheet">
+<script src="https://api.mapbox.com/mapbox-gl-js/v2.11.0/mapbox-gl.js"></script>
+<style>
+body { margin: 0; padding: 0; }
+#map { position: absolute; top: 0; bottom: 0; width: 100%; }
+
+    #info {
+        display: table;
+        position: relative;
+        margin: 0px;
+        word-wrap: anywhere;
+        white-space: pre-wrap;
+        padding: 0px;
+        border: none;
+        border-radius: 0px;
+        font-size: 12px;
+        text-align: center;
+        color: #222;
+        background: #00100c;
+    }
+.mapboxgl-popup {
+max-width: 200px;
+}
+</style>
+</head>
+<body>
+<script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.0/mapbox-gl-geocoder.min.js"></script>
+<link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.0/mapbox-gl-geocoder.css" type="text/css">
+<div hidden id="puntos">
+	{{ puntos|json_script:"puntos" }}
+</div>
+<div>
+	<div id="map"></div>
+	<pre id="info">
+		<a href="/index"><img src="{% static 'img/logo.png' %}" style="height: 150px;width:200px;text-align: center;"></a>
+		<h3 style="color:#ffffff;">Selecciona un punto haciendo click!</h3>
+		<h3 style="color:#ffffff;">Doble click para crear uno!</h3>
+	</pre>
+	
+</div>
+
+ 
+<script>
+	function removeItemOnce(arr, value) {
+	var index = arr.indexOf(value);
+	if (index > -1) {
+		arr.splice(index, 1);
+	}
+	return arr;
+	}
+
+	// TO MAKE THE MAP APPEAR YOU MUST
+	// ADD YOUR ACCESS TOKEN FROM
+	// https://account.mapbox.com
+	mapboxgl.accessToken = 'pk.eyJ1IjoibWF4Z2d4IiwiYSI6ImNsYXAwNGprbjBmcGozdXByaDZyb2RiajcifQ.Eh1PWHHtktUhxSaIV3dCnA';
+    const map = new mapboxgl.Map({
+        container: 'map', // container id
+        // Choose from Mapbox's core styles, or make your own style with Mapbox Studio
+        style: 'mapbox://styles/mapbox/streets-v12',
+        center: [-70.61921954654531, -33.490], // starting position
+        zoom: 16 // starting zoom
+    });
+
+	map.addControl(
+	new mapboxgl.GeolocateControl({
+	positionOptions: {
+	enableHighAccuracy: true
+	},
+	// When active the map will receive updates to the device's location as it changes.
+	trackUserLocation: true,
+	// Draw an arrow next to the location dot to indicate which direction the device is heading.
+	showUserHeading: true
+	})
+	);
+	const ids = JSON.parse(document.getElementById('puntos').textContent)
+	console.log(ids)
+    const markers = []
+    map.on('dblclick', (e) => {
+		e.preventDefault();
+		console.log(e.lngLat)
+		console.log(e.lngLat.wrap().lng)
+		console.log(e.lngLat.wrap().lat)
+		window.location.href = "/addPunto/"+e.lngLat.wrap().lng+"/"+e.lngLat.wrap().lat+"/"
+		
+    });
+
+	for(let i = 0; i<ids.length;i++){
+		console.log(ids[i].id)
+		console.log(ids[i].lngLat.split(":")[0])
+		console.log(ids[i].lngLat.split(":")[1])
+		console.log(ids[i].nombrePunto)
+		var marker = document.createElement('div')
+		marker.className = "marker"
+		marker.style.backgroundImage = `url(https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR1wJ4s2jiI4LuO0nyZONca43T9NMTU4Do-wQ&usqp=CAU)`
+		marker.style.width = `30px`;
+		marker.style.height = `30px`;
+		marker.style.backgroundSize = '100%';
+		var idM = ids[i].id
+		marker.id = idM
+		var popup = new mapboxgl.Popup({ offset: 25 }).setHTML(
+			"<h2>"+ids[i].nombrePunto+"</h2><a href='/verPunto/"+idM+"/'><button>Ver datos</button></a><a onClick='removeMarker(markers, "+idM+")'><button>Eliminar punto</button></a>"
+			);
+		
+		markers.push(marker);
+		
+		new mapboxgl.Marker(marker).setLngLat(ids[i].lngLat.split(":")).setPopup(popup).addTo(map)
+	}
+    
+    function removeMarker(markers, idM){
+		for(let i = 0; i<markers.length; i++){
+			if(markers[i].id = idM){
+				if(window.confirm("Deseas eliminar el punto?")){
+					window.location.href="/delPunto/"+idM+"/"
+				}
+			}
+		}
+    	
+    }
+</script>
+ 
+</body>
+</html>
